@@ -9,10 +9,10 @@ v0.x · macOS-first · requires Node ≥18 and [opencode](https://opencode.ai) �
 
 ## Why
 
-Running AI coding agents in your main working tree is fragile:
+`krowt` supports a workflow with many AI coding sessions running at once — each in its own git worktree, on its own branch, in its own terminal. Without that isolation, working this way is fragile:
 
-- Agent experiments mix with your own uncommitted work.
-- Running several agents in parallel is practically impossible without collisions.
+- Agent experiments mix with your own uncommitted work in your main working tree.
+- Parallel sessions collide when several agents share the same files.
 - After a session, nothing enforces that the results get committed, pushed, and cleaned up.
 
 `krowt <branch>` wraps all of this in one repeatable command — run it once per branch, in as many parallel terminals as you like.
