@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Dirty Tree → Git-UI startet im Worktree (Vordergrund, geerbtes stdio)
-- [ ] Sauberer Tree + ungepushte Commits → Git-UI startet
-- [ ] Branch ohne Upstream mit Commits → Git-UI startet
-- [ ] Sauber + alles gepusht → kein Git-UI-Start
-- [ ] Git-UI nicht installiert → Warnung + überspringen, kein Abbruch
-- [ ] Alle Fälle durch die E2E-Seam getestet
+- [x] Dirty Tree → Git-UI startet im Worktree (Vordergrund, geerbtes stdio)
+- [x] Sauberer Tree + ungepushte Commits → Git-UI startet
+- [x] Branch ohne Upstream mit Commits → Git-UI startet
+- [x] Sauber + alles gepusht → kein Git-UI-Start
+- [x] Git-UI nicht installiert → Warnung + überspringen, kein Abbruch
+- [x] Alle Fälle durch die E2E-Seam getestet

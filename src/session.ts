@@ -1,6 +1,7 @@
 import { mkdirSync, existsSync, rmSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import {
+  checkForUnsecuredWork,
   fetchBestEffort,
   git,
   localBranchExists,
@@ -12,7 +13,7 @@ import {
   worktreeList,
 } from "./git.js";
 import { confirm } from "./prompt.js";
-import { runForeground } from "./runner.js";
+import { CommandNotFoundError, runForeground } from "./runner.js";
 
 export function sanitizeBranch(branch: string): string {
   return branch.replaceAll("/", "-");
@@ -69,6 +70,22 @@ export async function runSession(branch: string, opts: SessionOptions = {}): Pro
   const env = { ...process.env, KROWT_BRANCH: branch, KROWT_WORKTREE: worktreePath };
   const agent = ["opencode"];
   await runForeground(agent, { cwd: worktreePath, env });
+
+  const changes = await checkForUnsecuredWork(worktreePath);
+  if (changes.dirtyFiles > 0 || changes.unpushedCommits > 0) {
+    const gitUi = ["lazygit"];
+    try {
+      await runForeground(gitUi, { cwd: worktreePath, env });
+    } catch (err) {
+      if (err instanceof CommandNotFoundError) {
+        process.stderr.write(
+          `krowt: warning: git UI "${gitUi[0]}" is not installed — skipping the commit/push step\n`,
+        );
+      } else {
+        throw err;
+      }
+    }
+  }
 
   const del = await confirm(`Delete worktree ${worktreePath}?`, false);
   if (del) {

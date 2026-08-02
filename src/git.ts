@@ -112,3 +112,43 @@ export async function lsRemoteHead(repo: string, remote = "origin"): Promise<str
     return null;
   }
 }
+
+export interface ChangeCheck {
+  dirtyFiles: number;
+  unpushedCommits: number;
+}
+
+export async function checkForUnsecuredWork(worktree: string): Promise<ChangeCheck> {
+  const status = await git(["status", "--porcelain"], worktree);
+  const dirtyFiles = status.split("\n").filter((line) => line.length > 0).length;
+
+  const upstream = await upstreamName(worktree);
+  let unpushedCommits: number;
+  if (upstream) {
+    unpushedCommits = await countRevs(worktree, ["@{u}..HEAD"]);
+  } else if (await hasAnyRemote(worktree)) {
+    unpushedCommits = await countRevs(worktree, ["HEAD", "--not", "--remotes"]);
+  } else {
+    const localDefault = await localDefaultBranch(worktree);
+    unpushedCommits = localDefault === "HEAD" ? 0 : await countRevs(worktree, ["HEAD", "--not", localDefault]);
+  }
+  return { dirtyFiles, unpushedCommits };
+}
+
+async function upstreamName(worktree: string): Promise<string | null> {
+  try {
+    const out = (await git(["rev-parse", "--abbrev-ref", "@{u}"], worktree)).trim();
+    return out.length > 0 ? out : null;
+  } catch {
+    return null;
+  }
+}
+
+async function hasAnyRemote(worktree: string): Promise<boolean> {
+  return (await git(["remote"], worktree)).trim().length > 0;
+}
+
+async function countRevs(worktree: string, args: string[]): Promise<number> {
+  const out = (await git(["rev-list", "--count", ...args], worktree)).trim();
+  return Number.parseInt(out, 10) || 0;
+}
