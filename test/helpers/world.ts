@@ -184,7 +184,8 @@ export class World {
     } catch {
       // fall back to /usr/bin
     }
-    return [this.binDir, gitDir, "/usr/bin", "/bin", "/usr/sbin", "/sbin"].join(":");
+    const nodeDir = dirname(process.execPath);
+    return [this.binDir, gitDir, nodeDir, "/usr/bin", "/bin", "/usr/sbin", "/sbin"].join(":");
   }
 
   runKrowt(
@@ -201,6 +202,14 @@ export class World {
       stdio: ["pipe", "pipe", "pipe"],
       detached: true,
     });
+  }
+
+  runInstalled(
+    binary: string,
+    args: string[],
+    opts: { input?: string; env?: NodeJS.ProcessEnv; cwd?: string } = {},
+  ): Promise<KrowtResult> {
+    return spawnBinary(binary, args, this.krowtEnv(opts.env), opts.cwd ?? this.repo, opts.input);
   }
 
   worktreeGitDir(worktree: string): string {
@@ -230,8 +239,18 @@ export function spawnKrowt(
   cwd: string,
   input?: string,
 ): Promise<KrowtResult> {
+  return spawnBinary(process.execPath, [CLI, ...args], env, cwd, input);
+}
+
+export function spawnBinary(
+  command: string,
+  args: string[],
+  env: NodeJS.ProcessEnv,
+  cwd: string,
+  input?: string,
+): Promise<KrowtResult> {
   return new Promise((resolvePromise, reject) => {
-    const child = spawn(process.execPath, [CLI, ...args], {
+    const child = spawn(command, args, {
       cwd,
       env,
       stdio: ["pipe", "pipe", "pipe"],

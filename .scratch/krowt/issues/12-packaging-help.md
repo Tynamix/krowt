@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] `npm i -g krowt` installiert ein lauffähiges `krowt`-Binary
-- [ ] Paket enthält nur Build-Output + Laufzeit-Dateien
-- [ ] `--help` deckt Befehle, Flags, Env-Vars und Config vollständig ab
-- [ ] Versions-Angabe (`--version`) vorhanden
-- [ ] Globaler Install + Smoke-Test durch die E2E-Seam (oder manuell dokumentiert) verifiziert
+- [x] `npm i -g krowt` installiert ein lauffähiges `krowt`-Binary
+- [x] Paket enthält nur Build-Output + Laufzeit-Dateien
+- [x] `--help` deckt Befehle, Flags, Env-Vars und Config vollständig ab
+- [x] Versions-Angabe (`--version`) vorhanden
+- [x] Globaler Install + Smoke-Test durch die E2E-Seam (oder manuell dokumentiert) verifiziert

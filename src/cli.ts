@@ -1,15 +1,18 @@
 #!/usr/bin/env node
 
+import { readFileSync } from "node:fs";
 import { resolveConfig, type ConfigFlags } from "./config.js";
 import { requireRepo } from "./git.js";
+import { HELP_TEXT } from "./help.js";
 import { runInit } from "./init.js";
 import { runList } from "./list.js";
 import { runSession } from "./session.js";
 
 export interface ParsedArgs extends ConfigFlags {
-  command: "session" | "init" | "list" | "help";
+  command: "session" | "init" | "list" | "help" | "version";
   branch?: string;
   base?: string;
+  explicitHelp?: boolean;
 }
 
 export function parseArgs(argv: string[]): ParsedArgs {
@@ -30,7 +33,9 @@ export function parseArgs(argv: string[]): ParsedArgs {
     } else if (arg === "--worktree-dir") {
       parsed.worktreeDir = takeValue(arg, argv[++i]);
     } else if (arg === "--help" || arg === "-h") {
-      return { command: "help" };
+      return { command: "help", explicitHelp: true };
+    } else if (arg === "--version") {
+      return { command: "version" };
     } else if (arg.startsWith("-")) {
       throw new Error(`unknown flag: ${arg}`);
     } else if (branch === undefined) {
@@ -50,11 +55,26 @@ export function parseArgs(argv: string[]): ParsedArgs {
   return parsed;
 }
 
+function version(): string {
+  const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+    version: string;
+  };
+  return pkg.version;
+}
+
 async function main(argv: string[]): Promise<number> {
   const parsed = parseArgs(argv);
+  if (parsed.command === "version") {
+    process.stdout.write(`${version()}\n`);
+    return 0;
+  }
   if (parsed.command === "help") {
-    process.stderr.write("usage: krowt <branch> [--base <ref>] | krowt init\n");
-    return parsed.branch ? 1 : 0;
+    if (parsed.explicitHelp) {
+      process.stdout.write(HELP_TEXT);
+      return 0;
+    }
+    process.stderr.write(HELP_TEXT);
+    return 1;
   }
   const repo = await requireRepo(process.cwd());
   const config = resolveConfig(repo, parsed);
