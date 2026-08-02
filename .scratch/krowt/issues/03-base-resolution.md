@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Online: neuer Branch basiert auf frisch gefetchtem Remote-Default
-- [ ] Offline/kein Remote: Warnung + Branch vom lokalen Default, Workflow läuft weiter
-- [ ] `--base <ref>` branched vom angegebenen Ref
-- [ ] Default-Branch-Erkennung via `origin/HEAD`-Symref mit sinnvollem Fallback
-- [ ] Alle Fälle (mit file-basiertem Fake-Remote bzw. ohne Remote) durch die E2E-Seam getestet
+- [x] Online: neuer Branch basiert auf frisch gefetchtem Remote-Default
+- [x] Offline/kein Remote: Warnung + Branch vom lokalen Default, Workflow läuft weiter
+- [x] `--base <ref>` branched vom angegebenen Ref
+- [x] Default-Branch-Erkennung via `origin/HEAD`-Symref mit sinnvollem Fallback
+- [x] Alle Fälle (mit file-basiertem Fake-Remote bzw. ohne Remote) durch die E2E-Seam getestet

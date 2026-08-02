@@ -89,3 +89,26 @@ export async function localDefaultBranch(repo: string): Promise<string> {
   if (await localBranchExists(repo, "master")) return "master";
   return "HEAD";
 }
+
+export async function fetchBestEffort(repo: string, remote = "origin"): Promise<boolean> {
+  return gitOk(["fetch", remote], repo);
+}
+
+export async function remoteHeadSymref(repo: string, remote = "origin"): Promise<string | null> {
+  try {
+    const out = (await git(["symbolic-ref", "--short", `refs/remotes/${remote}/HEAD`], repo)).trim();
+    return out.length > 0 ? out : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function lsRemoteHead(repo: string, remote = "origin"): Promise<string | null> {
+  try {
+    const out = await git(["ls-remote", "--symref", remote, "HEAD"], repo);
+    const match = out.match(/^ref: refs\/heads\/(\S+)\tHEAD/m);
+    return match?.[1] ? `${remote}/${match[1]}` : null;
+  } catch {
+    return null;
+  }
+}

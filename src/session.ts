@@ -1,10 +1,13 @@
 import { mkdirSync, existsSync, rmSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import {
+  fetchBestEffort,
   git,
   localBranchExists,
   localDefaultBranch,
+  lsRemoteHead,
   remoteBranchExists,
+  remoteHeadSymref,
   repoRoot,
   worktreeList,
 } from "./git.js";
@@ -15,7 +18,25 @@ export function sanitizeBranch(branch: string): string {
   return branch.replaceAll("/", "-");
 }
 
-export async function runSession(branch: string): Promise<number> {
+export interface SessionOptions {
+  base?: string;
+}
+
+export async function resolveBase(repo: string, flagBase?: string): Promise<string> {
+  if (flagBase) return flagBase;
+  await fetchBestEffort(repo);
+  const symref = await remoteHeadSymref(repo);
+  if (symref) return symref;
+  const lsRemote = await lsRemoteHead(repo);
+  if (lsRemote) return lsRemote;
+  const local = await localDefaultBranch(repo);
+  process.stderr.write(
+    `krowt: warning: could not determine the remote default branch (offline or no remote) — branching from local "${local}"\n`,
+  );
+  return local;
+}
+
+export async function runSession(branch: string, opts: SessionOptions = {}): Promise<number> {
   const repo = await repoRoot(process.cwd());
   const worktreesDir = join(dirname(repo), `${basename(repo)}-worktrees`);
   let worktreePath = join(worktreesDir, sanitizeBranch(branch));
@@ -39,7 +60,7 @@ export async function runSession(branch: string): Promise<number> {
     } else if (await remoteBranchExists(repo, branch)) {
       await git(["worktree", "add", "--track", "-b", branch, worktreePath, `origin/${branch}`], repo);
     } else {
-      const base = await localDefaultBranch(repo);
+      const base = await resolveBase(repo, opts.base);
       await git(["worktree", "add", "-b", branch, worktreePath, base], repo);
     }
     process.stderr.write(`Created worktree ${worktreePath}\n`);
