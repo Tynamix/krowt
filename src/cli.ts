@@ -3,10 +3,11 @@
 import { resolveConfig, type ConfigFlags } from "./config.js";
 import { requireRepo } from "./git.js";
 import { runInit } from "./init.js";
+import { runList } from "./list.js";
 import { runSession } from "./session.js";
 
 export interface ParsedArgs extends ConfigFlags {
-  command: "session" | "init" | "help";
+  command: "session" | "init" | "list" | "help";
   branch?: string;
   base?: string;
 }
@@ -39,8 +40,12 @@ export function parseArgs(argv: string[]): ParsedArgs {
     }
   }
   if (branch !== undefined) {
-    parsed.command = branch === "init" ? "init" : "session";
-    if (parsed.command === "session") parsed.branch = branch;
+    if (branch === "init" || branch === "list") {
+      parsed.command = branch;
+    } else {
+      parsed.command = "session";
+      parsed.branch = branch;
+    }
   }
   return parsed;
 }
@@ -55,6 +60,9 @@ async function main(argv: string[]): Promise<number> {
   const config = resolveConfig(repo, parsed);
   if (parsed.command === "init") {
     return runInit(repo, config);
+  }
+  if (parsed.command === "list") {
+    return runList(repo, config);
   }
   const opts = parsed.base !== undefined ? { base: parsed.base } : {};
   return runSession(repo, parsed.branch!, config, opts);

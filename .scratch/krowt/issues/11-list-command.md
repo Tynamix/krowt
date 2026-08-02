@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Listet alle krowt-verwalteten Worktrees des Repos mit Branch + Pfad
-- [ ] Zeigt Lock-Status an (läuft / stale / kein Lock)
-- [ ] Leeres Ergebnis → freundliche Meldung statt leerer Ausgabe
-- [ ] Außerhalb eines Repos → klarer Fehler
-- [ ] Durch die E2E-Seam getestet
+- [x] Listet alle krowt-verwalteten Worktrees des Repos mit Branch + Pfad
+- [x] Zeigt Lock-Status an (läuft / stale / kein Lock)
+- [x] Leeres Ergebnis → freundliche Meldung statt leerer Ausgabe
+- [x] Außerhalb eines Repos → klarer Fehler
+- [x] Durch die E2E-Seam getestet
