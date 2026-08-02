@@ -19,3 +19,7 @@ _Avoid_: dirty state, pending work
 **Managed worktree**:
 A worktree that belongs to krowt: located under the configured worktree dir (default `<repo>-worktrees/`), per `git worktree list --porcelain`. `krowt list` shows managed worktrees only.
 _Avoid_: session directory
+
+**Splash**:
+The greeting shown at the start of an interactive session. Suppressed when output is piped, replaced by a one-line fallback on narrow terminals, and can be turned off in configuration.
+_Avoid_: banner, logo screen, intro

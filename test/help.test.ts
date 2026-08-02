@@ -26,6 +26,7 @@ describe("--help", () => {
       "--version",
       "KROWT_AGENT",
       "KROWT_GIT_UI",
+      "KROWT_SPLASH",
       "KROWT_BRANCH",
       "KROWT_WORKTREE",
       ".krowt/config.toml",

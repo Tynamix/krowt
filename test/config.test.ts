@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { World } from "./helpers/world.js";
+import { resolveConfig } from "../src/config.js";
 
 function writeConfig(world: World, content: string): void {
   mkdirSync(join(world.repo, ".krowt"), { recursive: true });
@@ -154,5 +155,36 @@ describe("config system", () => {
 
     expect(result.code).toBe(0);
     expect(existsSync(join(world.repo, ".krowt"))).toBe(false);
+  });
+
+  it("accepts a boolean splash key in the config file", async () => {
+    const world = new World();
+    writeConfig(world, "splash = false\n");
+
+    const result = await world.runKrowt(["feat/x"], { input: "n\n" });
+
+    expect(result.code).toBe(0);
+    expect(resolveConfig(world.repo, {}).splash).toBe(false);
+  });
+
+  it("prefers KROWT_SPLASH over the config file", async () => {
+    const world = new World();
+    writeConfig(world, "splash = false\n");
+
+    expect(resolveConfig(world.repo, {}, { KROWT_SPLASH: "true" }).splash).toBe(true);
+    expect(resolveConfig(world.repo, {}, { KROWT_SPLASH: "false" }).splash).toBe(false);
+    expect(resolveConfig(world.repo, {}, { KROWT_SPLASH: "0" }).splash).toBe(false);
+  });
+
+  it("fails clearly on a non-boolean splash value", async () => {
+    const world = new World();
+    writeConfig(world, 'splash = "yes"\n');
+
+    const result = await world.runKrowt(["feat/x"], { input: "n\n" });
+
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain(".krowt/config.toml");
+    expect(result.stderr).toContain("splash");
+    expect(result.stderr).toContain("boolean");
   });
 });

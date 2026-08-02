@@ -11,6 +11,7 @@ export interface KrowtConfig {
   agent: Command;
   gitUi: Command;
   worktreeDir: string;
+  splash: boolean;
 }
 
 export interface ConfigFlags {
@@ -19,7 +20,8 @@ export interface ConfigFlags {
   worktreeDir?: string;
 }
 
-const KNOWN_KEYS = new Set(["agent", "git_ui", "worktree_dir"]);
+const STRING_KEYS = new Set(["agent", "git_ui", "worktree_dir"]);
+const BOOLEAN_KEYS = new Set(["splash"]);
 
 export class ConfigError extends Error {
   constructor(message: string) {
@@ -32,6 +34,7 @@ interface FileConfig {
   agent?: string;
   git_ui?: string;
   worktree_dir?: string;
+  splash?: boolean;
 }
 
 export function configPath(repo: string): string {
@@ -48,13 +51,18 @@ function loadConfigFile(repo: string): FileConfig {
     throw new ConfigError(`invalid config file ${path}: ${(err as Error).message}`);
   }
   for (const [key, value] of Object.entries(parsed)) {
-    if (!KNOWN_KEYS.has(key)) {
+    if (STRING_KEYS.has(key)) {
+      if (typeof value !== "string" || value.trim().length === 0) {
+        throw new ConfigError(`invalid config file ${path}: key "${key}" must be a non-empty string`);
+      }
+    } else if (BOOLEAN_KEYS.has(key)) {
+      if (typeof value !== "boolean") {
+        throw new ConfigError(`invalid config file ${path}: key "${key}" must be a boolean`);
+      }
+    } else {
       throw new ConfigError(
-        `invalid config file ${path}: unknown key "${key}" (known keys: ${[...KNOWN_KEYS].join(", ")})`,
+        `invalid config file ${path}: unknown key "${key}" (known keys: ${[...STRING_KEYS, ...BOOLEAN_KEYS].join(", ")})`,
       );
-    }
-    if (typeof value !== "string" || value.trim().length === 0) {
-      throw new ConfigError(`invalid config file ${path}: key "${key}" must be a non-empty string`);
     }
   }
   return parsed as FileConfig;
@@ -73,6 +81,12 @@ function nonEmpty(value: string | undefined): string | undefined {
   return value !== undefined && value.trim().length > 0 ? value : undefined;
 }
 
+function envBoolean(value: string | undefined): boolean | undefined {
+  const raw = nonEmpty(value);
+  if (raw === undefined) return undefined;
+  return !(raw === "false" || raw === "0");
+}
+
 export function resolveConfig(
   repo: string,
   flags: ConfigFlags,
@@ -87,5 +101,6 @@ export function resolveConfig(
     agent: splitCommand(agent),
     gitUi: splitCommand(gitUi),
     worktreeDir: isAbsolute(worktreeDirRaw) ? worktreeDirRaw : resolve(repo, worktreeDirRaw),
+    splash: envBoolean(env.KROWT_SPLASH) ?? file.splash ?? true,
   };
 }

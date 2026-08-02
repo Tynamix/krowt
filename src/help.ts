@@ -29,6 +29,8 @@ ENVIRONMENT
   KROWT_AGENT         Overrides the agent command
   KROWT_GIT_UI        Overrides the git UI command
   KROWT_WORKTREE_DIR  Overrides the session worktree location
+  KROWT_SPLASH        "false" or "0" hides the splash shown at session start
+  NO_COLOR            Disables colors in the splash
   KROWT_BRANCH        Set by krowt inside the agent process
   KROWT_WORKTREE      Set by krowt inside the agent process
 
@@ -39,6 +41,7 @@ CONFIGURATION
     agent = "opencode"
     git_ui = "lazygit"
     worktree_dir = "../myrepo-worktrees"
+    splash = true
 
   Precedence: CLI flag > environment variable > config file > defaults.
 `;
