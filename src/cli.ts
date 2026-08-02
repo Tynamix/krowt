@@ -7,6 +7,7 @@ import { HELP_TEXT } from "./help.js";
 import { runInit } from "./init.js";
 import { runList } from "./list.js";
 import { runSession } from "./session.js";
+import { renderSplash } from "./splash.js";
 
 export interface ParsedArgs extends ConfigFlags {
   command: "session" | "init" | "list" | "help" | "version";
@@ -84,6 +85,14 @@ async function main(argv: string[]): Promise<number> {
   if (parsed.command === "list") {
     return runList(repo, config);
   }
+  const splash = renderSplash({
+    isTTY: process.stdout.isTTY === true,
+    columns: process.stdout.columns || 80,
+    noColor: process.env.NO_COLOR !== undefined && process.env.NO_COLOR !== "",
+    enabled: config.splash,
+    version: version(),
+  });
+  if (splash !== null) process.stdout.write(splash);
   const opts = parsed.base !== undefined ? { base: parsed.base } : {};
   return runSession(repo, parsed.branch!, config, opts);
 }

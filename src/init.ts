@@ -20,6 +20,10 @@ const TEMPLATE = `# krowt configuration — team policy for this repository.
 # CLI flag: --worktree-dir · environment: KROWT_WORKTREE_DIR · default:
 # sibling directory "<repo>-worktrees"
 # worktree_dir = "../myrepo-worktrees"
+
+# Whether to show the splash at the start of an interactive session.
+# Environment: KROWT_SPLASH ("false" or "0" hides it) · default: true
+# splash = true
 `;
 
 function toolVersion(command: string): Promise<string | null> {
