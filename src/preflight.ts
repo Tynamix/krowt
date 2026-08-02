@@ -16,14 +16,19 @@ export function installHint(command: string): string {
 }
 
 export function commandAvailable(command: string, env: NodeJS.ProcessEnv = process.env): boolean {
+  return whichPath(command, env) !== null;
+}
+
+export function whichPath(command: string, env: NodeJS.ProcessEnv = process.env): string | null {
   if (command.includes("/")) {
-    return isExecutable(command);
+    return isExecutable(command) ? command : null;
   }
   for (const dir of (env.PATH ?? "").split(delimiter)) {
     if (dir.length === 0) continue;
-    if (isExecutable(join(dir, command))) return true;
+    const candidate = join(dir, command);
+    if (isExecutable(candidate)) return candidate;
   }
-  return false;
+  return null;
 }
 
 function isExecutable(path: string): boolean {

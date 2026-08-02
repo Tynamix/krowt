@@ -2,10 +2,11 @@
 
 import { resolveConfig, type ConfigFlags } from "./config.js";
 import { requireRepo } from "./git.js";
+import { runInit } from "./init.js";
 import { runSession } from "./session.js";
 
 export interface ParsedArgs extends ConfigFlags {
-  command: "session" | "help";
+  command: "session" | "init" | "help";
   branch?: string;
   base?: string;
 }
@@ -38,8 +39,8 @@ export function parseArgs(argv: string[]): ParsedArgs {
     }
   }
   if (branch !== undefined) {
-    parsed.command = "session";
-    parsed.branch = branch;
+    parsed.command = branch === "init" ? "init" : "session";
+    if (parsed.command === "session") parsed.branch = branch;
   }
   return parsed;
 }
@@ -47,11 +48,14 @@ export function parseArgs(argv: string[]): ParsedArgs {
 async function main(argv: string[]): Promise<number> {
   const parsed = parseArgs(argv);
   if (parsed.command === "help") {
-    process.stderr.write("usage: krowt <branch> [--base <ref>]\n");
+    process.stderr.write("usage: krowt <branch> [--base <ref>] | krowt init\n");
     return parsed.branch ? 1 : 0;
   }
   const repo = await requireRepo(process.cwd());
   const config = resolveConfig(repo, parsed);
+  if (parsed.command === "init") {
+    return runInit(repo, config);
+  }
   const opts = parsed.base !== undefined ? { base: parsed.base } : {};
   return runSession(repo, parsed.branch!, config, opts);
 }

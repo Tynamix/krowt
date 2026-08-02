@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Erzeugt `.krowt/config.toml` als kommentiertes Template mit allen Schlüsseln
-- [ ] Tool-Check-Report zeigt ✓/✗ pro Tool inkl. Install-Hinweis bei ✗
-- [ ] Bestehende Config bleibt unangetastet (klare Meldung statt Überschreiben)
-- [ ] Außerhalb eines Repos → klarer Fehler
-- [ ] Durch die E2E-Seam getestet
+- [x] Erzeugt `.krowt/config.toml` als kommentiertes Template mit allen Schlüsseln
+- [x] Tool-Check-Report zeigt ✓/✗ pro Tool inkl. Install-Hinweis bei ✗
+- [x] Bestehende Config bleibt unangetastet (klare Meldung statt Überschreiben)
+- [x] Außerhalb eines Repos → klarer Fehler
+- [x] Durch die E2E-Seam getestet
