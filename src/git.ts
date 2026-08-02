@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { isAbsolute, resolve } from "node:path";
 
 export class GitError extends Error {
   constructor(
@@ -70,6 +71,11 @@ export function parseWorktreeList(porcelain: string): WorktreeEntry[] {
 
 export async function repoRoot(cwd: string): Promise<string> {
   return (await git(["rev-parse", "--show-toplevel"], cwd)).trim();
+}
+
+export async function worktreeGitDir(worktree: string): Promise<string> {
+  const out = (await git(["rev-parse", "--git-dir"], worktree)).trim();
+  return isAbsolute(out) ? out : resolve(worktree, out);
 }
 
 export async function worktreeList(repo: string): Promise<WorktreeEntry[]> {

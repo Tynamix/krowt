@@ -10,8 +10,10 @@ import {
   remoteBranchExists,
   remoteHeadSymref,
   repoRoot,
+  worktreeGitDir,
   worktreeList,
 } from "./git.js";
+import { acquireLock } from "./lock.js";
 import { confirm } from "./prompt.js";
 import { CommandNotFoundError, runForeground } from "./runner.js";
 
@@ -67,6 +69,15 @@ export async function runSession(branch: string, opts: SessionOptions = {}): Pro
     process.stderr.write(`Created worktree ${worktreePath}\n`);
   }
 
+  const releaseLock = acquireLock(await worktreeGitDir(worktreePath), branch);
+  try {
+    return await runSessionInWorktree(repo, branch, worktreePath);
+  } finally {
+    releaseLock();
+  }
+}
+
+async function runSessionInWorktree(repo: string, branch: string, worktreePath: string): Promise<number> {
   const env = { ...process.env, KROWT_BRANCH: branch, KROWT_WORKTREE: worktreePath };
   const agent = ["opencode"];
   const startHead = (await git(["rev-parse", "HEAD"], worktreePath)).trim();

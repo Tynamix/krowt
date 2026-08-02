@@ -1,4 +1,4 @@
-import { execFileSync, spawn } from "node:child_process";
+import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, chmodSync, mkdirSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -179,6 +179,20 @@ export class World {
     opts: { input?: string; env?: NodeJS.ProcessEnv; cwd?: string } = {},
   ): Promise<KrowtResult> {
     return spawnKrowt(args, this.krowtEnv(opts.env), opts.cwd ?? this.repo, opts.input);
+  }
+
+  startKrowt(args: string[], opts: { env?: NodeJS.ProcessEnv; cwd?: string } = {}): ChildProcess {
+    return spawn(process.execPath, [CLI, ...args], {
+      cwd: opts.cwd ?? this.repo,
+      env: this.krowtEnv(opts.env),
+      stdio: ["pipe", "pipe", "pipe"],
+      detached: true,
+    });
+  }
+
+  worktreeGitDir(worktree: string): string {
+    const out = this.git(["-C", worktree, "rev-parse", "--git-dir"]);
+    return out.startsWith("/") ? out : resolve(worktree, out);
   }
 
   readStubLog(): StubCall[] {
