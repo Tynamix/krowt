@@ -70,7 +70,15 @@ export async function runSession(branch: string, opts: SessionOptions = {}): Pro
   const env = { ...process.env, KROWT_BRANCH: branch, KROWT_WORKTREE: worktreePath };
   const agent = ["opencode"];
   const startHead = (await git(["rev-parse", "HEAD"], worktreePath)).trim();
-  await runForeground(agent, { cwd: worktreePath, env });
+  for (;;) {
+    const result = await runForeground(agent, { cwd: worktreePath, env });
+    if (result.code === 0) break;
+    const what = result.signal
+      ? `Agent was killed by ${result.signal}.`
+      : `Agent exited with code ${result.code ?? "?"}.`;
+    const restart = await confirm(`${what} Restart the agent?`, true);
+    if (!restart) break;
+  }
 
   const changes = await checkForUnsecuredWork(worktreePath);
   if (changes.dirtyFiles > 0 || changes.unpushedCommits > 0) {

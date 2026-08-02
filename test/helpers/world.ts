@@ -21,7 +21,7 @@ export interface StubCall {
 }
 
 export interface StubControls {
-  action?: "write" | "commit" | "push" | "commitwrite" | "block" | "signal";
+  action?: "write" | "commit" | "push" | "commitwrite" | "block" | "signal" | "flaky";
   exit?: number;
 }
 
@@ -64,6 +64,11 @@ case "\${STUB_ACTION_${upper}-}" in
   signal)
     kill -TERM $$
     ;;
+  flaky)
+    count=$(cat "$STUB_STATE")
+    echo $((count - 1)) > "$STUB_STATE"
+    exit "$count"
+    ;;
 esac
 exit "\${STUB_EXIT_${upper}-0}"
 `;
@@ -79,6 +84,7 @@ export class World {
   readonly binDir: string;
   readonly stubLog: string;
   readonly stubMarker: string;
+  readonly stubState: string;
   readonly gitConfigGlobal: string;
   readonly remote?: string;
   private readonly stubControls = new Map<string, StubControls>();
@@ -89,6 +95,7 @@ export class World {
     this.binDir = join(this.root, "bin");
     this.stubLog = join(this.root, "stub.log");
     this.stubMarker = join(this.root, "stub-started");
+    this.stubState = join(this.root, "stub-state");
     this.gitConfigGlobal = join(this.root, "gitconfig");
 
     mkdirSync(this.binDir, { recursive: true });
@@ -157,6 +164,7 @@ export class World {
       PATH: `${this.binDir}:${process.env.PATH}`,
       STUB_LOG: this.stubLog,
       STUB_MARKER: this.stubMarker,
+      STUB_STATE: this.stubState,
     };
     for (const [name, controls] of this.stubControls) {
       const upper = stubEnvName(name);

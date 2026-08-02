@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Exit-Code ≠ 0 → Restart-Prompt erscheint
-- [ ] Exit durch Signal (z.B. Ctrl-C) → Restart-Prompt erscheint
-- [ ] "Ja" → Agent startet erneut im selben Worktree
-- [ ] "Nein" → Workflow fährt mit Change-Check fort
-- [ ] Sauberer Exit (0) → kein Prompt, normaler Ablauf
-- [ ] Alle Fälle durch die E2E-Seam getestet
+- [x] Exit-Code ≠ 0 → Restart-Prompt erscheint
+- [x] Exit durch Signal (z.B. Ctrl-C) → Restart-Prompt erscheint
+- [x] "Ja" → Agent startet erneut im selben Worktree
+- [x] "Nein" → Workflow fährt mit Change-Check fort
+- [x] Sauberer Exit (0) → kein Prompt, normaler Ablauf
+- [x] Alle Fälle durch die E2E-Seam getestet
