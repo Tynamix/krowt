@@ -1,0 +1,219 @@
+import { execFileSync, spawn } from "node:child_process";
+import { mkdtempSync, writeFileSync, readFileSync, existsSync, chmodSync, mkdirSync, realpathSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+
+const CLI = resolve(import.meta.dirname, "../../dist/cli.js");
+
+export interface KrowtResult {
+  code: number | null;
+  signal: NodeJS.Signals | null;
+  stdout: string;
+  stderr: string;
+}
+
+export interface StubCall {
+  name: string;
+  cwd: string;
+  argv: string;
+  branch: string;
+  worktree: string;
+}
+
+export interface StubControls {
+  action?: "write" | "commit" | "push" | "block" | "signal";
+  exit?: number;
+}
+
+export interface WorldOptions {
+  withRemote?: boolean;
+  gitUi?: boolean;
+  agent?: StubControls;
+  gitUiBehavior?: StubControls;
+}
+
+function stubScript(name: string): string {
+  const upper = stubEnvName(name);
+  return `#!/bin/sh
+printf '%s\\t%s\\t%s\\t%s\\t%s\\n' "${name}" "$PWD" "$*" "\${KROWT_BRANCH-}" "\${KROWT_WORKTREE-}" >> "$STUB_LOG"
+case "\${STUB_ACTION_${upper}-}" in
+  write)
+    echo "stub change $$ $RANDOM" >> file.txt
+    ;;
+  commit)
+    echo "stub change $$ $RANDOM" >> file.txt
+    git add -A >/dev/null 2>&1
+    git commit -m "stub commit" >/dev/null 2>&1
+    ;;
+  push)
+    echo "stub change $$ $RANDOM" >> file.txt
+    git add -A >/dev/null 2>&1
+    git commit -m "stub commit" >/dev/null 2>&1
+    git push -u origin HEAD >/dev/null 2>&1
+    ;;
+  block)
+    touch "$STUB_MARKER"
+    while :; do sleep 1; done
+    ;;
+  signal)
+    kill -TERM $$
+    ;;
+esac
+exit "\${STUB_EXIT_${upper}-0}"
+`;
+}
+
+function stubEnvName(name: string): string {
+  return name.replace(/[-a-z]/g, (c) => (c === "-" ? "_" : c.toUpperCase()));
+}
+
+export class World {
+  readonly root: string;
+  readonly repo: string;
+  readonly binDir: string;
+  readonly stubLog: string;
+  readonly stubMarker: string;
+  readonly gitConfigGlobal: string;
+  readonly remote?: string;
+  private readonly stubControls = new Map<string, StubControls>();
+
+  constructor(opts: WorldOptions = {}) {
+    this.root = realpathSync(mkdtempSync(join(tmpdir(), "krowt-test-")));
+    this.repo = join(this.root, "repo");
+    this.binDir = join(this.root, "bin");
+    this.stubLog = join(this.root, "stub.log");
+    this.stubMarker = join(this.root, "stub-started");
+    this.gitConfigGlobal = join(this.root, "gitconfig");
+
+    mkdirSync(this.binDir, { recursive: true });
+    writeFileSync(this.stubLog, "");
+    writeFileSync(
+      this.gitConfigGlobal,
+      ["[user]", "\tname = krowt test", "\temail = krowt@example.com", "[commit]", "\tgpgsign = false", "[init]", "\tdefaultBranch = main", ""].join("\n"),
+    );
+
+    this.git(["init", "-b", "main", this.repo]);
+    writeFileSync(join(this.repo, "README.md"), "# test repo\n");
+    this.git(["-C", this.repo, "add", "-A"]);
+    this.git(["-C", this.repo, "commit", "-m", "initial"]);
+
+    if (opts.withRemote) {
+      this.remote = join(this.root, "remote.git");
+      this.git(["init", "--bare", "-b", "main", this.remote]);
+      this.git(["-C", this.repo, "remote", "add", "origin", this.remote]);
+      this.git(["-C", this.repo, "push", "-u", "origin", "main"]);
+    }
+
+    this.writeStub("opencode", opts.agent);
+    if (opts.gitUi !== false) {
+      this.writeStub("lazygit", opts.gitUiBehavior);
+    }
+  }
+
+  get worktreesDir(): string {
+    return join(this.root, "repo-worktrees");
+  }
+
+  worktreePath(branch: string): string {
+    return join(this.worktreesDir, branch.replaceAll("/", "-"));
+  }
+
+  writeStub(name: string, controls: StubControls = {}): void {
+    const path = join(this.binDir, name);
+    writeFileSync(path, stubScript(name));
+    chmodSync(path, 0o755);
+    this.stubControls.set(name, controls);
+  }
+
+  removeStub(name: string): void {
+    this.stubControls.delete(name);
+  }
+
+  git(args: string[]): string {
+    return execFileSync("git", args, {
+      encoding: "utf8",
+      env: this.baseEnv(),
+    }).trim();
+  }
+
+  baseEnv(): NodeJS.ProcessEnv {
+    return {
+      ...process.env,
+      GIT_CONFIG_GLOBAL: this.gitConfigGlobal,
+      GIT_CONFIG_SYSTEM: "/dev/null",
+      GIT_TERMINAL_PROMPT: "0",
+    };
+  }
+
+  krowtEnv(extra: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
+    const env: NodeJS.ProcessEnv = {
+      ...this.baseEnv(),
+      PATH: `${this.binDir}:${process.env.PATH}`,
+      STUB_LOG: this.stubLog,
+      STUB_MARKER: this.stubMarker,
+    };
+    for (const [name, controls] of this.stubControls) {
+      const upper = stubEnvName(name);
+      if (controls.action) env[`STUB_ACTION_${upper}`] = controls.action;
+      if (controls.exit !== undefined) env[`STUB_EXIT_${upper}`] = String(controls.exit);
+    }
+    return { ...env, ...extra };
+  }
+
+  runKrowt(
+    args: string[],
+    opts: { input?: string; env?: NodeJS.ProcessEnv; cwd?: string } = {},
+  ): Promise<KrowtResult> {
+    return spawnKrowt(args, this.krowtEnv(opts.env), opts.cwd ?? this.repo, opts.input);
+  }
+
+  readStubLog(): StubCall[] {
+    if (!existsSync(this.stubLog)) return [];
+    return readFileSync(this.stubLog, "utf8")
+      .split("\n")
+      .filter((line) => line.length > 0)
+      .map((line) => {
+        const [name = "", cwd = "", argv = "", branch = "", worktree = ""] = line.split("\t");
+        return { name, cwd, argv, branch, worktree };
+      });
+  }
+
+  stubCalls(name: string): StubCall[] {
+    return this.readStubLog().filter((c) => c.name === name);
+  }
+}
+
+export function spawnKrowt(
+  args: string[],
+  env: NodeJS.ProcessEnv,
+  cwd: string,
+  input?: string,
+): Promise<KrowtResult> {
+  return new Promise((resolvePromise, reject) => {
+    const child = spawn(process.execPath, [CLI, ...args], {
+      cwd,
+      env,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (d) => (stdout += d.toString()));
+    child.stderr.on("data", (d) => (stderr += d.toString()));
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      reject(new Error(`krowt timed out.\nstdout:\n${stdout}\nstderr:\n${stderr}`));
+    }, 25_000);
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+    child.on("close", (code, signal) => {
+      clearTimeout(timer);
+      resolvePromise({ code, signal, stdout, stderr });
+    });
+    if (input !== undefined) {
+      child.stdin.write(input);
+    }
+    child.stdin.end();
+  });
+}

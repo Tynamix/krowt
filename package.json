@@ -1,0 +1,27 @@
+{
+  "name": "krowt",
+  "version": "0.1.0",
+  "description": "AI coding sessions in isolated git worktrees",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "krowt": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "npm run build && vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.8"
+  }
+}
