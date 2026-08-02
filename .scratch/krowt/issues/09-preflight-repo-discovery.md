@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Aufruf aus Unterverzeichnis findet die Repo-Wurzel und nutzt sie konsistent
-- [ ] Außerhalb eines Repos → klarer Fehler, Exit ≠ 0
-- [ ] Agent fehlt → Abbruch mit Install-Hinweis, keine Mutation (kein Branch, kein Worktree)
-- [ ] Git-UI fehlt → Warnung einmal zu Beginn, Git-UI-Schritt wird später übersprungen
-- [ ] Preflight prüft die konfigurierten (nicht hartcodierten) Befehlsnamen
-- [ ] Alle Fälle durch die E2E-Seam getestet
+- [x] Aufruf aus Unterverzeichnis findet die Repo-Wurzel und nutzt sie konsistent
+- [x] Außerhalb eines Repos → klarer Fehler, Exit ≠ 0
+- [x] Agent fehlt → Abbruch mit Install-Hinweis, keine Mutation (kein Branch, kein Worktree)
+- [x] Git-UI fehlt → Warnung einmal zu Beginn, Git-UI-Schritt wird später übersprungen
+- [x] Preflight prüft die konfigurierten (nicht hartcodierten) Befehlsnamen
+- [x] Alle Fälle durch die E2E-Seam getestet

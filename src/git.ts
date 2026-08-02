@@ -73,6 +73,22 @@ export async function repoRoot(cwd: string): Promise<string> {
   return (await git(["rev-parse", "--show-toplevel"], cwd)).trim();
 }
 
+export class NotARepositoryError extends Error {
+  constructor() {
+    super("not inside a git repository — krowt must be run from within a git repository");
+    this.name = "NotARepositoryError";
+  }
+}
+
+export async function requireRepo(cwd: string): Promise<string> {
+  try {
+    return await repoRoot(cwd);
+  } catch (err) {
+    if (err instanceof GitError) throw new NotARepositoryError();
+    throw err;
+  }
+}
+
 export async function worktreeGitDir(worktree: string): Promise<string> {
   const out = (await git(["rev-parse", "--git-dir"], worktree)).trim();
   return isAbsolute(out) ? out : resolve(worktree, out);

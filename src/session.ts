@@ -15,6 +15,7 @@ import {
   worktreeList,
 } from "./git.js";
 import { acquireLock } from "./lock.js";
+import { preflight } from "./preflight.js";
 import { confirm } from "./prompt.js";
 import { CommandNotFoundError, runForeground } from "./runner.js";
 
@@ -41,11 +42,12 @@ export async function resolveBase(repo: string, flagBase?: string): Promise<stri
 }
 
 export async function runSession(
+  repo: string,
   branch: string,
   config: KrowtConfig,
   opts: SessionOptions = {},
 ): Promise<number> {
-  const repo = await repoRoot(process.cwd());
+  const { gitUiAvailable } = await preflight(config);
   let worktreePath = join(config.worktreeDir, sanitizeBranch(branch));
 
   const existing = (await worktreeList(repo)).find((w) => w.branch === branch);
@@ -75,7 +77,7 @@ export async function runSession(
 
   const releaseLock = acquireLock(await worktreeGitDir(worktreePath), branch);
   try {
-    return await runSessionInWorktree(repo, branch, worktreePath, config);
+    return await runSessionInWorktree(repo, branch, worktreePath, config, gitUiAvailable);
   } finally {
     releaseLock();
   }
@@ -86,6 +88,7 @@ async function runSessionInWorktree(
   branch: string,
   worktreePath: string,
   config: KrowtConfig,
+  gitUiAvailable: boolean,
 ): Promise<number> {
   const env = { ...process.env, KROWT_BRANCH: branch, KROWT_WORKTREE: worktreePath };
   const agent = config.agent;
@@ -101,7 +104,7 @@ async function runSessionInWorktree(
   }
 
   const changes = await checkForUnsecuredWork(worktreePath);
-  if (changes.dirtyFiles > 0 || changes.unpushedCommits > 0) {
+  if (gitUiAvailable && (changes.dirtyFiles > 0 || changes.unpushedCommits > 0)) {
     const gitUi = config.gitUi;
     try {
       await runForeground(gitUi, { cwd: worktreePath, env });

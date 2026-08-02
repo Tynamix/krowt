@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { resolveConfig, type ConfigFlags } from "./config.js";
-import { repoRoot } from "./git.js";
+import { requireRepo } from "./git.js";
 import { runSession } from "./session.js";
 
 export interface ParsedArgs extends ConfigFlags {
@@ -50,10 +50,10 @@ async function main(argv: string[]): Promise<number> {
     process.stderr.write("usage: krowt <branch> [--base <ref>]\n");
     return parsed.branch ? 1 : 0;
   }
-  const repo = await repoRoot(process.cwd());
+  const repo = await requireRepo(process.cwd());
   const config = resolveConfig(repo, parsed);
   const opts = parsed.base !== undefined ? { base: parsed.base } : {};
-  return runSession(parsed.branch!, config, opts);
+  return runSession(repo, parsed.branch!, config, opts);
 }
 
 main(process.argv.slice(2))

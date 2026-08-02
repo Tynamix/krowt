@@ -1,7 +1,7 @@
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, chmodSync, mkdirSync, realpathSync } from "node:fs";
+import { mkdtempSync, writeFileSync, readFileSync, existsSync, chmodSync, mkdirSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 const CLI = resolve(import.meta.dirname, "../../dist/cli.js");
 
@@ -140,6 +140,7 @@ export class World {
 
   removeStub(name: string): void {
     this.stubControls.delete(name);
+    rmSync(join(this.binDir, name), { force: true });
   }
 
   git(args: string[]): string {
@@ -161,7 +162,7 @@ export class World {
   krowtEnv(extra: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     const env: NodeJS.ProcessEnv = {
       ...this.baseEnv(),
-      PATH: `${this.binDir}:${process.env.PATH}`,
+      PATH: this.hermeticPath(),
       STUB_LOG: this.stubLog,
       STUB_MARKER: this.stubMarker,
       STUB_STATE: this.stubState,
@@ -172,6 +173,18 @@ export class World {
       if (controls.exit !== undefined) env[`STUB_EXIT_${upper}`] = String(controls.exit);
     }
     return { ...env, ...extra };
+  }
+
+  private hermeticPath(): string {
+    // Only stubs, git, and system tools — never the developer's real
+    // opencode/lazygit/etc. from the ambient PATH.
+    let gitDir = "/usr/bin";
+    try {
+      gitDir = dirname(execFileSync("which", ["git"], { encoding: "utf8" }).trim());
+    } catch {
+      // fall back to /usr/bin
+    }
+    return [this.binDir, gitDir, "/usr/bin", "/bin", "/usr/sbin", "/sbin"].join(":");
   }
 
   runKrowt(
