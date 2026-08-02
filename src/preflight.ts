@@ -15,10 +15,6 @@ export function installHint(command: string): string {
   return INSTALL_HINTS[command] ?? `install "${command}" and make sure it is on PATH`;
 }
 
-export function commandAvailable(command: string, env: NodeJS.ProcessEnv = process.env): boolean {
-  return whichPath(command, env) !== null;
-}
-
 export function whichPath(command: string, env: NodeJS.ProcessEnv = process.env): string | null {
   if (command.includes("/")) {
     return isExecutable(command) ? command : null;
@@ -41,12 +37,12 @@ function isExecutable(path: string): boolean {
 }
 
 export async function preflight(config: KrowtConfig): Promise<PreflightResult> {
-  const agent = config.agent[0]!;
-  if (!commandAvailable(agent)) {
+  const agent = config.agent.bin;
+  if (!whichPath(agent)) {
     throw new Error(`agent command "${agent}" is not installed. Install it with: ${installHint(agent)}`);
   }
-  const gitUi = config.gitUi[0]!;
-  if (!commandAvailable(gitUi)) {
+  const gitUi = config.gitUi.bin;
+  if (!whichPath(gitUi)) {
     process.stderr.write(
       `krowt: warning: git UI "${gitUi}" is not installed (${installHint(gitUi)}) — the commit/push step will be skipped\n`,
     );

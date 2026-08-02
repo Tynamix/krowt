@@ -14,7 +14,7 @@ export async function runList(repo: string, config: KrowtConfig): Promise<number
 
   const rows: Array<{ branch: string; path: string; status: string }> = [];
   for (const entry of managed) {
-    let status = "";
+    let status = "no lock";
     const lock = readLock(await worktreeGitDir(entry.path));
     if (lock) {
       status = pidAlive(lock.pid)

@@ -117,6 +117,36 @@ describe("config system", () => {
     expect(result.stderr).toContain("agent_x");
   });
 
+  it("prefers KROWT_WORKTREE_DIR over the config file's worktree_dir", async () => {
+    const world = new World();
+    writeConfig(world, 'worktree_dir = "wt"\n');
+    const envDir = join(world.root, "env-worktrees");
+
+    const result = await world.runKrowt(["feat/x"], {
+      input: "n\n",
+      env: { KROWT_WORKTREE_DIR: envDir },
+    });
+
+    expect(result.code).toBe(0);
+    expect(existsSync(join(envDir, "feat-x"))).toBe(true);
+    expect(existsSync(join(world.repo, "wt", "feat-x"))).toBe(false);
+  });
+
+  it("prefers the --worktree-dir flag over KROWT_WORKTREE_DIR", async () => {
+    const world = new World();
+    const envDir = join(world.root, "env-worktrees");
+    const flagDir = join(world.root, "flag-worktrees");
+
+    const result = await world.runKrowt(["--worktree-dir", flagDir, "feat/x"], {
+      input: "n\n",
+      env: { KROWT_WORKTREE_DIR: envDir },
+    });
+
+    expect(result.code).toBe(0);
+    expect(existsSync(join(flagDir, "feat-x"))).toBe(true);
+    expect(existsSync(join(envDir, "feat-x"))).toBe(false);
+  });
+
   it("never creates .krowt during a normal run", async () => {
     const world = new World();
 

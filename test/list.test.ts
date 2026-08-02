@@ -33,6 +33,7 @@ describe("krowt list", () => {
     expect(result.stdout).toContain(world.worktreePath("feat/a"));
     expect(result.stdout).toContain("feat/b");
     expect(result.stdout).toContain(world.worktreePath("feat/b"));
+    expect(result.stdout).toContain("no lock");
     expect(result.stdout).not.toContain(world.repo + " ");
   });
 

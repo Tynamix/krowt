@@ -17,7 +17,8 @@ const TEMPLATE = `# krowt configuration — team policy for this repository.
 
 # Where session worktrees live. Relative paths resolve against the
 # repository root; absolute paths are used as-is.
-# CLI flag: --worktree-dir · default: sibling directory "<repo>-worktrees"
+# CLI flag: --worktree-dir · environment: KROWT_WORKTREE_DIR · default:
+# sibling directory "<repo>-worktrees"
 # worktree_dir = "../myrepo-worktrees"
 `;
 
@@ -46,8 +47,8 @@ export async function runInit(repo: string, config: KrowtConfig): Promise<number
 
   process.stdout.write("\nTool check:\n");
   const tools: Array<[string, string]> = [
-    ["agent", config.agent[0]!],
-    ["git UI", config.gitUi[0]!],
+    ["agent", config.agent.bin],
+    ["git UI", config.gitUi.bin],
   ];
   for (const [label, command] of tools) {
     const found = whichPath(command);

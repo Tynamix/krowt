@@ -2,9 +2,14 @@ import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { parse } from "smol-toml";
 
+export interface Command {
+  bin: string;
+  args: string[];
+}
+
 export interface KrowtConfig {
-  agent: string[];
-  gitUi: string[];
+  agent: Command;
+  gitUi: Command;
   worktreeDir: string;
 }
 
@@ -59,8 +64,9 @@ export function defaultWorktreeDir(repo: string): string {
   return join(dirname(repo), `${basename(repo)}-worktrees`);
 }
 
-function splitCommand(command: string): string[] {
-  return command.split(/\s+/).filter((part) => part.length > 0);
+function splitCommand(command: string): Command {
+  const parts = command.split(/\s+/).filter((part) => part.length > 0);
+  return { bin: parts[0]!, args: parts.slice(1) };
 }
 
 function nonEmpty(value: string | undefined): string | undefined {
@@ -75,7 +81,8 @@ export function resolveConfig(
   const file = loadConfigFile(repo);
   const agent = nonEmpty(flags.agent) ?? nonEmpty(env.KROWT_AGENT) ?? file.agent ?? "opencode";
   const gitUi = nonEmpty(flags.gitUi) ?? nonEmpty(env.KROWT_GIT_UI) ?? file.git_ui ?? "lazygit";
-  const worktreeDirRaw = nonEmpty(flags.worktreeDir) ?? file.worktree_dir ?? defaultWorktreeDir(repo);
+  const worktreeDirRaw =
+    nonEmpty(flags.worktreeDir) ?? nonEmpty(env.KROWT_WORKTREE_DIR) ?? file.worktree_dir ?? defaultWorktreeDir(repo);
   return {
     agent: splitCommand(agent),
     gitUi: splitCommand(gitUi),

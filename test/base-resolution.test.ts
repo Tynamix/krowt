@@ -54,6 +54,23 @@ describe("base resolution", () => {
     expect(branchHead).toBe(localMain);
   });
 
+  it("warns and falls back to the local default when the fetch fails despite a stale origin/HEAD", async () => {
+    const world = new World({ withRemote: true });
+    world.git(["-C", world.repo, "remote", "set-head", "origin", "-a"]);
+    const remoteHead = advanceRemoteMain(world);
+    const localMain = world.git(["-C", world.repo, "rev-parse", "main"]);
+    expect(localMain).not.toBe(remoteHead);
+    // go "offline": the remote becomes unreachable
+    world.git(["-C", world.repo, "remote", "set-url", "origin", join(world.root, "gone.git")]);
+
+    const result = await world.runKrowt(["feat/x"], { input: "n\n" });
+
+    expect(result.code).toBe(0);
+    expect(result.stderr.toLowerCase()).toContain("warning");
+    const branchHead = world.git(["-C", world.repo, "rev-parse", "refs/heads/feat/x"]);
+    expect(branchHead).toBe(localMain);
+  });
+
   it("branches from the ref given via --base", async () => {
     const world = new World({ withRemote: true });
     world.git(["-C", world.repo, "checkout", "-b", "topic"]);

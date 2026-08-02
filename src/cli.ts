@@ -17,7 +17,7 @@ export interface ParsedArgs extends ConfigFlags {
 
 export function parseArgs(argv: string[]): ParsedArgs {
   const parsed: ParsedArgs = { command: "help" };
-  let branch: string | undefined;
+  let positional: string | undefined;
   const takeValue = (flag: string, value: string | undefined): string => {
     if (value === undefined) throw new Error(`${flag} requires a value`);
     return value;
@@ -38,18 +38,18 @@ export function parseArgs(argv: string[]): ParsedArgs {
       return { command: "version" };
     } else if (arg.startsWith("-")) {
       throw new Error(`unknown flag: ${arg}`);
-    } else if (branch === undefined) {
-      branch = arg;
+    } else if (positional === undefined) {
+      positional = arg;
     } else {
       throw new Error(`unexpected argument: ${arg}`);
     }
   }
-  if (branch !== undefined) {
-    if (branch === "init" || branch === "list") {
-      parsed.command = branch;
+  if (positional !== undefined) {
+    if (positional === "init" || positional === "list") {
+      parsed.command = positional;
     } else {
       parsed.command = "session";
-      parsed.branch = branch;
+      parsed.branch = positional;
     }
   }
   return parsed;

@@ -51,11 +51,14 @@ export interface WorktreeEntry {
 export function parseWorktreeList(porcelain: string): WorktreeEntry[] {
   const entries: WorktreeEntry[] = [];
   let current: Partial<WorktreeEntry> | null = null;
+  const flush = () => {
+    if (current?.path) {
+      entries.push({ head: "", branch: null, detached: false, ...current } as WorktreeEntry);
+    }
+  };
   for (const line of porcelain.split("\n")) {
     if (line.startsWith("worktree ")) {
-      if (current?.path) {
-        entries.push({ head: "", branch: null, detached: false, ...current } as WorktreeEntry);
-      }
+      flush();
       current = { path: line.slice("worktree ".length) };
     } else if (current) {
       if (line.startsWith("HEAD ")) current.head = line.slice("HEAD ".length);
@@ -63,9 +66,7 @@ export function parseWorktreeList(porcelain: string): WorktreeEntry[] {
       else if (line === "detached") current.detached = true;
     }
   }
-  if (current?.path) {
-    entries.push({ head: "", branch: null, detached: false, ...current } as WorktreeEntry);
-  }
+  flush();
   return entries;
 }
 
@@ -102,8 +103,8 @@ export async function localBranchExists(repo: string, branch: string): Promise<b
   return gitOk(["show-ref", "--verify", "--quiet", `refs/heads/${branch}`], repo);
 }
 
-export async function remoteBranchExists(repo: string, branch: string, remote = "origin"): Promise<boolean> {
-  return gitOk(["show-ref", "--verify", "--quiet", `refs/remotes/${remote}/${branch}`], repo);
+export async function remoteBranchExists(repo: string, branch: string): Promise<boolean> {
+  return gitOk(["show-ref", "--verify", "--quiet", `refs/remotes/origin/${branch}`], repo);
 }
 
 export async function localDefaultBranch(repo: string): Promise<string> {
@@ -112,27 +113,28 @@ export async function localDefaultBranch(repo: string): Promise<string> {
   return "HEAD";
 }
 
-export async function fetchBestEffort(repo: string, remote = "origin"): Promise<boolean> {
-  return gitOk(["fetch", remote], repo);
+export async function fetchBestEffort(repo: string): Promise<boolean> {
+  return gitOk(["fetch", "origin"], repo);
 }
 
-export async function remoteHeadSymref(repo: string, remote = "origin"): Promise<string | null> {
+async function gitOrNull(args: string[], cwd: string): Promise<string | null> {
   try {
-    const out = (await git(["symbolic-ref", "--short", `refs/remotes/${remote}/HEAD`], repo)).trim();
+    const out = (await git(args, cwd)).trim();
     return out.length > 0 ? out : null;
   } catch {
     return null;
   }
 }
 
-export async function lsRemoteHead(repo: string, remote = "origin"): Promise<string | null> {
-  try {
-    const out = await git(["ls-remote", "--symref", remote, "HEAD"], repo);
-    const match = out.match(/^ref: refs\/heads\/(\S+)\tHEAD/m);
-    return match?.[1] ? `${remote}/${match[1]}` : null;
-  } catch {
-    return null;
-  }
+export async function remoteHeadSymref(repo: string): Promise<string | null> {
+  return gitOrNull(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"], repo);
+}
+
+export async function lsRemoteHead(repo: string): Promise<string | null> {
+  const out = await gitOrNull(["ls-remote", "--symref", "origin", "HEAD"], repo);
+  if (!out) return null;
+  const match = out.match(/^ref: refs\/heads\/(\S+)\tHEAD/m);
+  return match?.[1] ? `origin/${match[1]}` : null;
 }
 
 export interface ChangeCheck {
@@ -158,12 +160,7 @@ export async function checkForUnsecuredWork(worktree: string): Promise<ChangeChe
 }
 
 async function upstreamName(worktree: string): Promise<string | null> {
-  try {
-    const out = (await git(["rev-parse", "--abbrev-ref", "@{u}"], worktree)).trim();
-    return out.length > 0 ? out : null;
-  } catch {
-    return null;
-  }
+  return gitOrNull(["rev-parse", "--abbrev-ref", "@{u}"], worktree);
 }
 
 async function hasAnyRemote(worktree: string): Promise<boolean> {

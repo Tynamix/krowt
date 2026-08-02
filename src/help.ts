@@ -26,10 +26,11 @@ FLAGS
   --version             Show the version
 
 ENVIRONMENT
-  KROWT_AGENT       Overrides the agent command
-  KROWT_GIT_UI      Overrides the git UI command
-  KROWT_BRANCH      Set by krowt inside the agent process
-  KROWT_WORKTREE    Set by krowt inside the agent process
+  KROWT_AGENT         Overrides the agent command
+  KROWT_GIT_UI        Overrides the git UI command
+  KROWT_WORKTREE_DIR  Overrides the session worktree location
+  KROWT_BRANCH        Set by krowt inside the agent process
+  KROWT_WORKTREE      Set by krowt inside the agent process
 
 CONFIGURATION
   .krowt/config.toml at the repository root (created by 'krowt init',

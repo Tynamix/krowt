@@ -12,3 +12,7 @@
 - [x] Sauber + alles gepusht → kein Git-UI-Start
 - [x] Git-UI nicht installiert → Warnung + überspringen, kein Abbruch
 - [x] Alle Fälle durch die E2E-Seam getestet
+
+## Comments
+
+- Interpretation of "unpushed": the spec sentence "unpushed when the branch has no upstream or `git log @{u}..HEAD` is non-empty" is applied as — upstream exists → `@{u}..HEAD` non-empty; no upstream → commits not reachable from any remote ref (`rev-list HEAD --not --remotes`); no remotes at all → commits ahead of the local default branch. Taken literally ("no upstream" alone = unpushed), every read-only session on a fresh branch would open the git UI, contradicting user story 23 and this ticket's own "Branch ohne Upstream **mit Commits**" checklist item. Recorded during code review.

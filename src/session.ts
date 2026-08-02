@@ -1,44 +1,13 @@
-import { mkdirSync, existsSync, rmSync } from "node:fs";
-import { join, dirname } from "node:path";
 import type { KrowtConfig } from "./config.js";
-import {
-  checkForUnsecuredWork,
-  fetchBestEffort,
-  git,
-  localBranchExists,
-  localDefaultBranch,
-  lsRemoteHead,
-  remoteBranchExists,
-  remoteHeadSymref,
-  repoRoot,
-  worktreeGitDir,
-  worktreeList,
-} from "./git.js";
+import { checkForUnsecuredWork, git, worktreeGitDir, type ChangeCheck } from "./git.js";
 import { acquireLock } from "./lock.js";
 import { preflight } from "./preflight.js";
 import { confirm } from "./prompt.js";
 import { CommandNotFoundError, runForeground } from "./runner.js";
-
-export function sanitizeBranch(branch: string): string {
-  return branch.replaceAll("/", "-");
-}
+import { ensureWorktree } from "./worktree.js";
 
 export interface SessionOptions {
   base?: string;
-}
-
-export async function resolveBase(repo: string, flagBase?: string): Promise<string> {
-  if (flagBase) return flagBase;
-  await fetchBestEffort(repo);
-  const symref = await remoteHeadSymref(repo);
-  if (symref) return symref;
-  const lsRemote = await lsRemoteHead(repo);
-  if (lsRemote) return lsRemote;
-  const local = await localDefaultBranch(repo);
-  process.stderr.write(
-    `krowt: warning: could not determine the remote default branch (offline or no remote) — branching from local "${local}"\n`,
-  );
-  return local;
 }
 
 export async function runSession(
@@ -48,32 +17,7 @@ export async function runSession(
   opts: SessionOptions = {},
 ): Promise<number> {
   const { gitUiAvailable } = await preflight(config);
-  let worktreePath = join(config.worktreeDir, sanitizeBranch(branch));
-
-  const existing = (await worktreeList(repo)).find((w) => w.branch === branch);
-  if (existing && existing.path === worktreePath) {
-    worktreePath = existing.path;
-    process.stderr.write(`Resuming session in ${worktreePath}\n`);
-  } else {
-    if (existing) {
-      throw new Error(
-        `branch "${branch}" is already checked out at ${existing.path} — finish that session or remove the worktree first`,
-      );
-    }
-    if (existsSync(worktreePath)) {
-      rmSync(worktreePath, { recursive: true, force: true });
-    }
-    mkdirSync(dirname(worktreePath), { recursive: true });
-    if (await localBranchExists(repo, branch)) {
-      await git(["worktree", "add", worktreePath, branch], repo);
-    } else if (await remoteBranchExists(repo, branch)) {
-      await git(["worktree", "add", "--track", "-b", branch, worktreePath, `origin/${branch}`], repo);
-    } else {
-      const base = await resolveBase(repo, opts.base);
-      await git(["worktree", "add", "-b", branch, worktreePath, base], repo);
-    }
-    process.stderr.write(`Created worktree ${worktreePath}\n`);
-  }
+  const worktreePath = await ensureWorktree(repo, branch, config, opts);
 
   const releaseLock = acquireLock(await worktreeGitDir(worktreePath), branch);
   try {
@@ -111,7 +55,7 @@ async function runSessionInWorktree(
     } catch (err) {
       if (err instanceof CommandNotFoundError) {
         process.stderr.write(
-          `krowt: warning: git UI "${gitUi[0]}" is not installed — skipping the commit/push step\n`,
+          `krowt: warning: git UI "${gitUi.bin}" is not installed — skipping the commit/push step\n`,
         );
       } else {
         throw err;
@@ -123,8 +67,8 @@ async function runSessionInWorktree(
   const endHead = (await git(["rev-parse", "HEAD"], worktreePath)).trim();
   const secure = after.dirtyFiles === 0 && after.unpushedCommits === 0;
   const reason = describeState(after, endHead === startHead);
-  const del = await confirm(`Delete worktree ${worktreePath}? (${reason})`, secure);
-  if (del) {
+  const shouldDelete = await confirm(`Delete worktree ${worktreePath}? (${reason})`, secure);
+  if (shouldDelete) {
     try {
       const args = ["worktree", "remove"];
       if (!secure) args.push("--force");
@@ -142,10 +86,7 @@ function plural(count: number, singular: string, pluralForm: string): string {
   return count === 1 ? `${count} ${singular}` : `${count} ${pluralForm}`;
 }
 
-export function describeState(
-  changes: { dirtyFiles: number; unpushedCommits: number },
-  headUnchanged: boolean,
-): string {
+export function describeState(changes: ChangeCheck, headUnchanged: boolean): string {
   const parts: string[] = [];
   if (changes.dirtyFiles > 0) parts.push(plural(changes.dirtyFiles, "uncommitted file", "uncommitted files"));
   if (changes.unpushedCommits > 0) parts.push(plural(changes.unpushedCommits, "unpushed commit", "unpushed commits"));
