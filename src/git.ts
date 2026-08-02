@@ -80,6 +80,10 @@ export async function localBranchExists(repo: string, branch: string): Promise<b
   return gitOk(["show-ref", "--verify", "--quiet", `refs/heads/${branch}`], repo);
 }
 
+export async function remoteBranchExists(repo: string, branch: string, remote = "origin"): Promise<boolean> {
+  return gitOk(["show-ref", "--verify", "--quiet", `refs/remotes/${remote}/${branch}`], repo);
+}
+
 export async function localDefaultBranch(repo: string): Promise<string> {
   if (await localBranchExists(repo, "main")) return "main";
   if (await localBranchExists(repo, "master")) return "master";

@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Lokaler Branch → Worktree wird dafür erstellt/ausgecheckt
-- [ ] Branch nur auf Remote → lokaler Tracking-Branch wird angelegt
-- [ ] Branch bereits in anderem Worktree ausgecheckt → klarer Fehler, keine Mutation
-- [ ] Re-Run bei existierendem Worktree → transparente Fortsetzung, keine Neuerstellung
-- [ ] Verwaistes Verzeichnis (unbekannt für `git worktree list`) wird vor Neuerstellung aufgeräumt
-- [ ] Alle Fälle durch die E2E-Seam getestet
+- [x] Lokaler Branch → Worktree wird dafür erstellt/ausgecheckt
+- [x] Branch nur auf Remote → lokaler Tracking-Branch wird angelegt
+- [x] Branch bereits in anderem Worktree ausgecheckt → klarer Fehler, keine Mutation
+- [x] Re-Run bei existierendem Worktree → transparente Fortsetzung, keine Neuerstellung
+- [x] Verwaistes Verzeichnis (unbekannt für `git worktree list`) wird vor Neuerstellung aufgeräumt
+- [x] Alle Fälle durch die E2E-Seam getestet
