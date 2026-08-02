@@ -69,6 +69,7 @@ export async function runSession(branch: string, opts: SessionOptions = {}): Pro
 
   const env = { ...process.env, KROWT_BRANCH: branch, KROWT_WORKTREE: worktreePath };
   const agent = ["opencode"];
+  const startHead = (await git(["rev-parse", "HEAD"], worktreePath)).trim();
   await runForeground(agent, { cwd: worktreePath, env });
 
   const changes = await checkForUnsecuredWork(worktreePath);
@@ -87,14 +88,36 @@ export async function runSession(branch: string, opts: SessionOptions = {}): Pro
     }
   }
 
-  const del = await confirm(`Delete worktree ${worktreePath}?`, false);
+  const after = await checkForUnsecuredWork(worktreePath);
+  const endHead = (await git(["rev-parse", "HEAD"], worktreePath)).trim();
+  const secure = after.dirtyFiles === 0 && after.unpushedCommits === 0;
+  const reason = describeState(after, endHead === startHead);
+  const del = await confirm(`Delete worktree ${worktreePath}? (${reason})`, secure);
   if (del) {
     try {
-      await git(["worktree", "remove", worktreePath], repo);
+      const args = ["worktree", "remove"];
+      if (!secure) args.push("--force");
+      args.push(worktreePath);
+      await git(args, repo);
       process.stderr.write(`Removed worktree ${worktreePath}\n`);
     } catch (err) {
       process.stderr.write(`krowt: could not remove worktree: ${(err as Error).message}\n`);
     }
   }
   return 0;
+}
+
+function plural(count: number, singular: string, pluralForm: string): string {
+  return count === 1 ? `${count} ${singular}` : `${count} ${pluralForm}`;
+}
+
+export function describeState(
+  changes: { dirtyFiles: number; unpushedCommits: number },
+  headUnchanged: boolean,
+): string {
+  const parts: string[] = [];
+  if (changes.dirtyFiles > 0) parts.push(plural(changes.dirtyFiles, "uncommitted file", "uncommitted files"));
+  if (changes.unpushedCommits > 0) parts.push(plural(changes.unpushedCommits, "unpushed commit", "unpushed commits"));
+  if (parts.length > 0) return parts.join(", ");
+  return headUnchanged ? "nothing changed" : "all work committed and pushed";
 }

@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Prompt erscheint nach jeder Session, inklusive der Begründung des Zustands
-- [ ] Default `Y` bei komplett gepushtem oder unverändertem Stand
-- [ ] Default `N` bei uncommitted oder ungepushten Änderungen
-- [ ] "Ja" trotz ungesicherter Arbeit → `git worktree remove --force`
-- [ ] Lokaler Branch bleibt immer erhalten
-- [ ] Alle Fälle durch die E2E-Seam getestet
+- [x] Prompt erscheint nach jeder Session, inklusive der Begründung des Zustands
+- [x] Default `Y` bei komplett gepushtem oder unverändertem Stand
+- [x] Default `N` bei uncommitted oder ungepushten Änderungen
+- [x] "Ja" trotz ungesicherter Arbeit → `git worktree remove --force`
+- [x] Lokaler Branch bleibt immer erhalten
+- [x] Alle Fälle durch die E2E-Seam getestet

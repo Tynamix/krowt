@@ -21,7 +21,7 @@ export interface StubCall {
 }
 
 export interface StubControls {
-  action?: "write" | "commit" | "push" | "block" | "signal";
+  action?: "write" | "commit" | "push" | "commitwrite" | "block" | "signal";
   exit?: number;
 }
 
@@ -50,6 +50,12 @@ case "\${STUB_ACTION_${upper}-}" in
     git add -A >/dev/null 2>&1
     git commit -m "stub commit" >/dev/null 2>&1
     git push -u origin HEAD >/dev/null 2>&1
+    ;;
+  commitwrite)
+    echo "stub change $$ $RANDOM" >> file.txt
+    git add -A >/dev/null 2>&1
+    git commit -m "stub commit" >/dev/null 2>&1
+    echo "more $$ $RANDOM" >> file.txt
     ;;
   block)
     touch "$STUB_MARKER"
