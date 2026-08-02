@@ -1,5 +1,6 @@
 import { mkdirSync, existsSync, rmSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { join, dirname } from "node:path";
+import type { KrowtConfig } from "./config.js";
 import {
   checkForUnsecuredWork,
   fetchBestEffort,
@@ -39,10 +40,13 @@ export async function resolveBase(repo: string, flagBase?: string): Promise<stri
   return local;
 }
 
-export async function runSession(branch: string, opts: SessionOptions = {}): Promise<number> {
+export async function runSession(
+  branch: string,
+  config: KrowtConfig,
+  opts: SessionOptions = {},
+): Promise<number> {
   const repo = await repoRoot(process.cwd());
-  const worktreesDir = join(dirname(repo), `${basename(repo)}-worktrees`);
-  let worktreePath = join(worktreesDir, sanitizeBranch(branch));
+  let worktreePath = join(config.worktreeDir, sanitizeBranch(branch));
 
   const existing = (await worktreeList(repo)).find((w) => w.branch === branch);
   if (existing && existing.path === worktreePath) {
@@ -71,15 +75,20 @@ export async function runSession(branch: string, opts: SessionOptions = {}): Pro
 
   const releaseLock = acquireLock(await worktreeGitDir(worktreePath), branch);
   try {
-    return await runSessionInWorktree(repo, branch, worktreePath);
+    return await runSessionInWorktree(repo, branch, worktreePath, config);
   } finally {
     releaseLock();
   }
 }
 
-async function runSessionInWorktree(repo: string, branch: string, worktreePath: string): Promise<number> {
+async function runSessionInWorktree(
+  repo: string,
+  branch: string,
+  worktreePath: string,
+  config: KrowtConfig,
+): Promise<number> {
   const env = { ...process.env, KROWT_BRANCH: branch, KROWT_WORKTREE: worktreePath };
-  const agent = ["opencode"];
+  const agent = config.agent;
   const startHead = (await git(["rev-parse", "HEAD"], worktreePath)).trim();
   for (;;) {
     const result = await runForeground(agent, { cwd: worktreePath, env });
@@ -93,7 +102,7 @@ async function runSessionInWorktree(repo: string, branch: string, worktreePath: 
 
   const changes = await checkForUnsecuredWork(worktreePath);
   if (changes.dirtyFiles > 0 || changes.unpushedCommits > 0) {
-    const gitUi = ["lazygit"];
+    const gitUi = config.gitUi;
     try {
       await runForeground(gitUi, { cwd: worktreePath, env });
     } catch (err) {

@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] `.krowt/config.toml` (TOML) wird geladen, wenn vorhanden; ungültige Werte → klare Fehlermeldung
-- [ ] Precedence Flag > Env > Config > Defaults greift für Agent, Git-UI und Worktree-Ort
-- [ ] `KROWT_AGENT` / `KROWT_GIT_UI` tauschen die Tools zur Laufzeit aus
-- [ ] Konfigurierter Worktree-Ort wird für Erstellung und Erkennung genutzt
-- [ ] Ohne Config laufen die Defaults; es wird nichts angelegt
-- [ ] Alle Precedence-Kombinationen durch die E2E-Seam getestet
+- [x] `.krowt/config.toml` (TOML) wird geladen, wenn vorhanden; ungültige Werte → klare Fehlermeldung
+- [x] Precedence Flag > Env > Config > Defaults greift für Agent, Git-UI und Worktree-Ort
+- [x] `KROWT_AGENT` / `KROWT_GIT_UI` tauschen die Tools zur Laufzeit aus
+- [x] Konfigurierter Worktree-Ort wird für Erstellung und Erkennung genutzt
+- [x] Ohne Config laufen die Defaults; es wird nichts angelegt
+- [x] Alle Precedence-Kombinationen durch die E2E-Seam getestet
