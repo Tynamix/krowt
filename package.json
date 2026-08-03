@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "description": "AI coding sessions in isolated git worktrees",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tynamix/krowt.git"
+  },
   "type": "module",
   "bin": {
     "krowt": "dist/cli.js"
