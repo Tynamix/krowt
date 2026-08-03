@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/Tynamix/krowt/compare/cli-krowt-v0.2.1...cli-krowt-v0.2.2) (2026-08-03)
+
+
+### Bug Fixes
+
+* add repository field for npm provenance verification ([2c7b0e2](https://github.com/Tynamix/krowt/commit/2c7b0e25026bb5ee21d502fd7ea091669ae214a9))
+* add repository field for npm provenance verification ([0c79d75](https://github.com/Tynamix/krowt/commit/0c79d75c25a925c8933e44c6b02ee8aa012e429e))
+
 ## [0.2.1](https://github.com/Tynamix/krowt/compare/cli-krowt-v0.2.0...cli-krowt-v0.2.1) (2026-08-03)
 
 
