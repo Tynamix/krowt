@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/Tynamix/krowt/compare/cli-krowt-v0.2.0...cli-krowt-v0.2.1) (2026-08-03)
+
+
+### Bug Fixes
+
+* drop registry-url so OIDC trusted publishing takes precedence ([21dcbe5](https://github.com/Tynamix/krowt/commit/21dcbe51420ae7ac0e7b31f519a251066ec137c6))
+* drop registry-url so OIDC trusted publishing takes precedence ([920d9d1](https://github.com/Tynamix/krowt/commit/920d9d14d88d06035443d235b92db2dbe1b2f4f7))
+
 ## [0.2.0](https://github.com/Tynamix/krowt/compare/cli-krowt-v0.1.0...cli-krowt-v0.2.0) (2026-08-03)
 
 
