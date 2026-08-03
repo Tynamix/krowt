@@ -1,6 +1,6 @@
 {
   "name": "cli-krowt",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "AI coding sessions in isolated git worktrees",
   "license": "MIT",
   "repository": {
