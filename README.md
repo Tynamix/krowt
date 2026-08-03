@@ -20,7 +20,7 @@ v0.x · macOS-first · requires Node ≥18 and [opencode](https://opencode.ai) �
 ## Install
 
 ```console
-$ npm install -g krowt
+$ npm install -g cli-krowt
 ```
 
 krowt orchestrates two external tools, checked before anything is created:
