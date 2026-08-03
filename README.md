@@ -2,10 +2,10 @@
 
 AI coding sessions in isolated git worktrees.
 
-[![npm](https://img.shields.io/npm/v/krowt)](https://www.npmjs.com/package/krowt)
+[![npm](https://img.shields.io/npm/v/cli-krowt)](https://www.npmjs.com/package/cli-krowt)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-v0.x · macOS-first · requires Node ≥18 and [opencode](https://opencode.ai) · [lazygit](https://github.com/jesseduffield/lazygit) optional
+v<!-- x-release-please-version -->0.2.1<!-- x-release-please-end --> · macOS-first · requires Node ≥18 and [opencode](https://opencode.ai) · [lazygit](https://github.com/jesseduffield/lazygit) optional
 
 ## Why
 
