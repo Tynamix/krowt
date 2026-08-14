@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/Tynamix/krowt/compare/cli-krowt-v0.2.2...cli-krowt-v0.2.3) (2026-08-14)
+
+
+### Bug Fixes
+
+* base new branches on the remote the default branch tracks, not hardcoded origin ([#10](https://github.com/Tynamix/krowt/issues/10)) ([2fab1c1](https://github.com/Tynamix/krowt/commit/2fab1c1044e35f0600ae5cd38703b248f45bb705))
+
 ## [0.2.2](https://github.com/Tynamix/krowt/compare/cli-krowt-v0.2.1...cli-krowt-v0.2.2) (2026-08-03)
 
 
