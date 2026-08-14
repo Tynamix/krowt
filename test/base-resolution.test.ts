@@ -86,4 +86,31 @@ describe("base resolution", () => {
     const branchHead = world.git(["-C", world.repo, "rev-parse", "refs/heads/feat/x"]);
     expect(branchHead).toBe(topicHead);
   });
+
+  it("bases new branches on the remote the default branch tracks, not on a hardcoded origin", async () => {
+    const world = new World({ withRemote: true });
+    world.git(["-C", world.repo, "remote", "rename", "origin", "github"]);
+
+    const oldRemote = join(world.root, "old.git");
+    world.git(["init", "--bare", "-b", "develop", oldRemote]);
+    const scratch = join(world.root, "old-scratch");
+    world.git(["clone", oldRemote, scratch]);
+    writeFileSync(join(scratch, "legacy.txt"), "legacy\n");
+    world.git(["-C", scratch, "add", "-A"]);
+    world.git(["-C", scratch, "commit", "-m", "old develop tip"]);
+    world.git(["-C", scratch, "push", "origin", "develop"]);
+    world.git(["-C", world.repo, "remote", "add", "origin", oldRemote]);
+    world.git(["-C", world.repo, "fetch", "origin"]);
+    world.git(["-C", world.repo, "remote", "set-head", "origin", "-a"]);
+
+    const mainHead = world.git(["-C", world.repo, "rev-parse", "main"]);
+    const oldTip = world.git(["-C", world.repo, "rev-parse", "origin/develop"]);
+    expect(oldTip).not.toBe(mainHead);
+
+    const result = await world.runKrowt(["feat/x"], { input: "n\n" });
+
+    expect(result.code).toBe(0);
+    const branchHead = world.git(["-C", world.repo, "rev-parse", "refs/heads/feat/x"]);
+    expect(branchHead).toBe(mainHead);
+  });
 });
