@@ -9,7 +9,7 @@ One full krowt run for a branch: worktree creation, agent run, commit/push via a
 _Avoid_: run, job, task
 
 **Base**:
-The git ref a new session's branch is created from. Normally the repository's default branch, fetched from the remote when online, local when offline.
+The git ref a new session's branch is created from. Normally the default branch of the remote the local default branch tracks (its upstream remote, falling back to `origin`), fetched when online, local when offline.
 _Avoid_: starting point, parent commit
 
 **Unsecured work**:

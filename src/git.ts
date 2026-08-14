@@ -103,8 +103,8 @@ export async function localBranchExists(repo: string, branch: string): Promise<b
   return gitOk(["show-ref", "--verify", "--quiet", `refs/heads/${branch}`], repo);
 }
 
-export async function remoteBranchExists(repo: string, branch: string): Promise<boolean> {
-  return gitOk(["show-ref", "--verify", "--quiet", `refs/remotes/origin/${branch}`], repo);
+export async function remoteBranchExists(repo: string, remote: string, branch: string): Promise<boolean> {
+  return gitOk(["show-ref", "--verify", "--quiet", `refs/remotes/${remote}/${branch}`], repo);
 }
 
 export async function localDefaultBranch(repo: string): Promise<string> {
@@ -113,8 +113,22 @@ export async function localDefaultBranch(repo: string): Promise<string> {
   return "HEAD";
 }
 
-export async function fetchBestEffort(repo: string): Promise<boolean> {
-  return gitOk(["fetch", "origin"], repo);
+export async function defaultRemote(repo: string): Promise<string | null> {
+  const local = await localDefaultBranch(repo);
+  if (local !== "HEAD") {
+    const upstream = await gitOrNull(["config", `branch.${local}.remote`], repo);
+    if (upstream && upstream !== ".") return upstream;
+  }
+  const remotes = (await git(["remote"], repo))
+    .trim()
+    .split("\n")
+    .filter((r) => r.length > 0);
+  if (remotes.includes("origin")) return "origin";
+  return remotes[0] ?? null;
+}
+
+export async function fetchBestEffort(repo: string, remote: string): Promise<boolean> {
+  return gitOk(["fetch", remote], repo);
 }
 
 async function gitOrNull(args: string[], cwd: string): Promise<string | null> {
@@ -126,15 +140,15 @@ async function gitOrNull(args: string[], cwd: string): Promise<string | null> {
   }
 }
 
-export async function remoteHeadSymref(repo: string): Promise<string | null> {
-  return gitOrNull(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"], repo);
+export async function remoteHeadSymref(repo: string, remote: string): Promise<string | null> {
+  return gitOrNull(["symbolic-ref", "--short", `refs/remotes/${remote}/HEAD`], repo);
 }
 
-export async function lsRemoteHead(repo: string): Promise<string | null> {
-  const out = await gitOrNull(["ls-remote", "--symref", "origin", "HEAD"], repo);
+export async function lsRemoteHead(repo: string, remote: string): Promise<string | null> {
+  const out = await gitOrNull(["ls-remote", "--symref", remote, "HEAD"], repo);
   if (!out) return null;
   const match = out.match(/^ref: refs\/heads\/(\S+)\tHEAD/m);
-  return match?.[1] ? `origin/${match[1]}` : null;
+  return match?.[1] ? `${remote}/${match[1]}` : null;
 }
 
 export interface ChangeCheck {

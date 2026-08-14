@@ -2,6 +2,7 @@ import { mkdirSync, existsSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { KrowtConfig } from "./config.js";
 import {
+  defaultRemote,
   fetchBestEffort,
   git,
   localBranchExists,
@@ -16,23 +17,22 @@ export function sanitizeBranch(branch: string): string {
   return branch.replaceAll("/", "-");
 }
 
-export async function resolveBase(repo: string, flagBase?: string): Promise<string> {
+export async function resolveBase(repo: string, flagBase?: string, remote?: string | null): Promise<string> {
   if (flagBase) return flagBase;
-  const fetched = await fetchBestEffort(repo);
-  if (!fetched) {
-    const local = await localDefaultBranch(repo);
+  const resolvedRemote = remote === undefined ? await defaultRemote(repo) : remote;
+  const local = await localDefaultBranch(repo);
+  if (resolvedRemote && (await fetchBestEffort(repo, resolvedRemote))) {
+    const symref = await remoteHeadSymref(repo, resolvedRemote);
+    if (symref) return symref;
+    const lsRemote = await lsRemoteHead(repo, resolvedRemote);
+    if (lsRemote) return lsRemote;
     process.stderr.write(
-      `krowt: warning: could not fetch the remote default branch (offline or no remote) — branching from local "${local}"\n`,
+      `krowt: warning: could not determine the default branch of remote "${resolvedRemote}" — branching from local "${local}"\n`,
     );
     return local;
   }
-  const symref = await remoteHeadSymref(repo);
-  if (symref) return symref;
-  const lsRemote = await lsRemoteHead(repo);
-  if (lsRemote) return lsRemote;
-  const local = await localDefaultBranch(repo);
   process.stderr.write(
-    `krowt: warning: could not determine the remote default branch — branching from local "${local}"\n`,
+    `krowt: warning: could not fetch the remote default branch (offline or no remote) — branching from local "${local}"\n`,
   );
   return local;
 }
@@ -62,11 +62,14 @@ export async function ensureWorktree(
   mkdirSync(dirname(worktreePath), { recursive: true });
   if (await localBranchExists(repo, branch)) {
     await git(["worktree", "add", worktreePath, branch], repo);
-  } else if (await remoteBranchExists(repo, branch)) {
-    await git(["worktree", "add", "--track", "-b", branch, worktreePath, `origin/${branch}`], repo);
   } else {
-    const base = await resolveBase(repo, opts.base);
-    await git(["worktree", "add", "-b", branch, worktreePath, base], repo);
+    const remote = await defaultRemote(repo);
+    if (remote && (await remoteBranchExists(repo, remote, branch))) {
+      await git(["worktree", "add", "--track", "-b", branch, worktreePath, `${remote}/${branch}`], repo);
+    } else {
+      const base = await resolveBase(repo, opts.base, remote);
+      await git(["worktree", "add", "-b", branch, worktreePath, base], repo);
+    }
   }
   process.stderr.write(`Created worktree ${worktreePath}\n`);
   return worktreePath;
